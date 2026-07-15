@@ -3,6 +3,7 @@
 
 #include "SCharacter.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 
 // Sets default values
@@ -12,10 +13,15 @@ ASCharacter::ASCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>("SpringArmComp");
+	SpringArmComp->bUsePawnControlRotation = true;
 	SpringArmComp->SetupAttachment(RootComponent);
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>("CameraComp");
 	CameraComp->SetupAttachment(SpringArmComp);
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+
+	bUseControllerRotationYaw = false;
 }
 
 // Called when the game starts or when spawned
@@ -34,8 +40,34 @@ void ASCharacter::Tick(float DeltaTime)
 
 void ASCharacter::MoveForward(float Value)
 {
-	AddMovementInput(GetActorForwardVector(), Value);
+	FRotator ControlRot = GetControlRotation();
+	ControlRot.Pitch = 0.0f;
+	ControlRot.Roll = 0.0f;
 
+	AddMovementInput(ControlRot.Vector(), Value);
+
+}
+
+void ASCharacter::MoveRight(float Value)
+{
+	FRotator ControlRot = GetControlRotation();
+	ControlRot.Pitch = 0.0f;
+	ControlRot.Roll = 0.0f;
+
+	FVector RightVector = FRotationMatrix(ControlRot).GetScaledAxis(EAxis::Y);
+
+	AddMovementInput(RightVector, Value);
+
+}
+
+void ASCharacter::PrimaryAttack()
+{
+	FTransform SpawnTM = FTransform(GetControlRotation(), GetActorLocation());
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;  
+
+	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
 }
 
 // Called to bind functionality to input
@@ -44,9 +76,12 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ASCharacter::MoveRight);
 
-	PlayerInputComponent->BindAxis("Yaw", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("Pitch", this, &APawn::AddControllerPitchInput);
 
+	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+
+	PlayerInputComponent->BindAction("PrimaryAttack", IE_Pressed, this, &ASCharacter::PrimaryAttack )
 }
 
