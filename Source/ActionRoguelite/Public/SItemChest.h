@@ -12,6 +12,11 @@ class ACTIONROGUELITE_API ASItemChest : public AActor, public ISGameplayInterfac
 {
 	GENERATED_BODY()
 
+public:
+
+	UPROPERTY(EditAnywhere);
+	float TargetPitch;
+
 	void Interact_Implementatiton(APawn* IntigatorPawn);
 	
 protected:
