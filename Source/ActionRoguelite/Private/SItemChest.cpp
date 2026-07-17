@@ -21,7 +21,7 @@ ASItemChest::ASItemChest()
 
 void ASItemChest::Interact_Implementatiton(APawn* IntigatorPawn)
 {
-	LidMesh->SetRelativeRotation(FRotator(TargetPitch, 0, 0));
+	LidMesh->SetRelativeRotation(FRotator(TargetPitch, 0, 0) );
 }
 
 // Called when the game starts or when spawned
