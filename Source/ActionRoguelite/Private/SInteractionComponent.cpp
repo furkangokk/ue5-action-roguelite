@@ -45,31 +45,40 @@ void USInteractionComponent::PrimaryInteract()
 
 	FVector EyeLocation;
 	FRotator EyeRotation;
-
-	// 1. Karakterin bakýþ açýsýný alýyoruz
 	MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);
 
-	// 2. Start ve End noktalarýný DOÐRU HESAPLIYORUZ
-	FVector Start = EyeLocation; // Çizgi gözden çýkacak
-	FVector End = EyeLocation + (EyeRotation.Vector() * 1000.0f); // Baktýðý yöne doðru 1000 birim ileri gidecek
+	FVector End = EyeLocation + (EyeRotation.Vector() * 1000);
 
-	FHitResult Hit;
+	//FHitResult Hit;
+	//bool bBlockingHit = GetWorld()->LineTraceSingleByObjectType(Hit, EyeLocation, End, ObjectQueryParams);
 
-	// 3. Çizgiyi (LineTrace) oluþturduðumuz Start ve End ile atýyoruz
-	GetWorld()->LineTraceSingleByObjectType(Hit, Start, End, ObjectQueryParams);
+	TArray<FHitResult> Hits;
 
-	AActor* HitActor = Hit.GetActor();
+	float Radius = 30.f;
 
-	if (HitActor)
+	FCollisionShape Shape;
+	Shape.SetSphere(Radius);
+
+	bool bBlockingHit = GetWorld()->SweepMultiByObjectType(Hits, EyeLocation, End, FQuat::Identity, ObjectQueryParams, Shape);
+
+	FColor LineColor = bBlockingHit ? FColor::Green : FColor::Red;
+
+	for (FHitResult Hit : Hits)
 	{
-		if (HitActor->Implements<USGameplayInterface>())
+		AActor* HitActor = Hit.GetActor();
+		if (HitActor)
 		{
-			APawn* MyPawn = Cast<APawn>(MyOwner);
+			if (HitActor->Implements<USGameplayInterface>())
+			{
+				APawn* MyPawn = Cast<APawn>(MyOwner);
 
-			ISGameplayInterface::Execute_Interact(HitActor, MyPawn);
+				ISGameplayInterface::Execute_Interact(HitActor, MyPawn);
+				break;
+			}
 		}
+
+		DrawDebugSphere(GetWorld(), Hit.ImpactPoint, Radius, 32, LineColor, false, 2.0f);
 	}
 
-	// 4. Debug çizgisini de doðru End noktasýna çizdiriyoruz
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f, 0, 2.0f);
+	DrawDebugLine(GetWorld(), EyeLocation, End, LineColor, false, 2.0f, 0, 2.0f);
 }

@@ -9,6 +9,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class USInteractionComponent;
+class UAnimMontage;
 
 UCLASS()
 class ACTIONROGUELITE_API ASCharacter : public ACharacter
@@ -17,8 +18,14 @@ class ACTIONROGUELITE_API ASCharacter : public ACharacter
 
 protected:
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Attack")
 	TSubclassOf<AActor> ProjectileClass;
+
+	UPROPERTY(EditAnywhere, Category ="Attack")
+	UAnimMontage* AttackAnim;
+
+	FTimerHandle TimerHandle_PrimaryAttack;
+
 
 public:
 	// Sets default values for this character's properties
@@ -48,6 +55,9 @@ public:
 	void MoveRight(float Value);
 
 	void PrimaryAttack();
+
+	void PrimaryAttack_TimeElapsed();
+
 
 	void PrimaryInteract();
 
