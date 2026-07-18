@@ -2,6 +2,8 @@
 
 
 #include "SInteractionComponent.h"
+#include <SGameplayInterface.h>
+#include <DrawDebugHelpers.h>
 
 
 
@@ -41,15 +43,33 @@ void USInteractionComponent::PrimaryInteract()
 
 	AActor* MyOwner = GetOwner();
 
-	FVector Start;
-	FVector End;
-
-	FVector EyeLocaiton;
+	FVector EyeLocation;
 	FRotator EyeRotation;
 
-	MyOwner->GetActorEyesViewPoint(EyeLocaiton, EyeRotation);
+	// 1. Karakterin bakýþ açýsýný alýyoruz
+	MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);
 
-	HitResult hit;
+	// 2. Start ve End noktalarýný DOÐRU HESAPLIYORUZ
+	FVector Start = EyeLocation; // Çizgi gözden çýkacak
+	FVector End = EyeLocation + (EyeRotation.Vector() * 1000.0f); // Baktýðý yöne doðru 1000 birim ileri gidecek
+
+	FHitResult Hit;
+
+	// 3. Çizgiyi (LineTrace) oluþturduðumuz Start ve End ile atýyoruz
 	GetWorld()->LineTraceSingleByObjectType(Hit, Start, End, ObjectQueryParams);
 
+	AActor* HitActor = Hit.GetActor();
+
+	if (HitActor)
+	{
+		if (HitActor->Implements<USGameplayInterface>())
+		{
+			APawn* MyPawn = Cast<APawn>(MyOwner);
+
+			ISGameplayInterface::Execute_Interact(HitActor, MyPawn);
+		}
+	}
+
+	// 4. Debug çizgisini de doðru End noktasýna çizdiriyoruz
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f, 0, 2.0f);
 }
