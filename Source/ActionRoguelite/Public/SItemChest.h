@@ -17,7 +17,7 @@ public:
 	UPROPERTY(EditAnywhere);
 	float TargetPitch;
 
-	void Interact_Implementatiton(APawn* IntigatorPawn);
+	virtual void Interact_Implementation(APawn* IntigatorPawn) override;
 	
 protected:
 
