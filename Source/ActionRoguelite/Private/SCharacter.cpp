@@ -6,6 +6,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "SInteractionComponent.h"
+#include <Kismet/KismetMathLibrary.h>
+#include "DrawDebugHelpers.h"
 
 
 // Sets default values
@@ -75,16 +77,78 @@ void ASCharacter::PrimaryAttack()
 
 void ASCharacter::PrimaryAttack_TimeElapsed()
 {
-	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+	// ---------------------------------------------------------
+	// 1. ADIM: Iþýný Doðrudan Kameranýn Lokasyonundan ve Rotasyonundan Baþlat
+	// (Önceki GetActorEyesViewPoint TPS için yanlýþ veri veriyor)
+	// ---------------------------------------------------------
 
-	FTransform SpawnTM = FTransform(GetControlRotation(), HandLocation);
+	FVector CameraLocation;
+	FRotator CameraRotation;
+
+	// Karakter sýnýfýnýn içindeki Kamera Komponentini kullan:
+	// 'FollowCamera' üçüncü þahýs þablonlarýndaki varsayýlan isimdir.
+	if (CameraComp)
+	{
+		CameraLocation = CameraComp->GetComponentLocation();
+		CameraRotation = CameraComp->GetComponentRotation();
+	}
+	else
+	{
+		// Güvenlik: Eðer kamera yoksa (garip), varsayýlana dön
+		GetActorEyesViewPoint(CameraLocation, CameraRotation);
+	}
+
+	// ---------------------------------------------------------
+	// 2. ADIM: Trace Mesafesini Artýr
+	// ---------------------------------------------------------
+	float TraceDistance = 10000.0f; // Mesafeyi 10 metre yerine ~100 metreye çýkar
+	FVector TraceStart = CameraLocation;
+	FVector TraceEnd = TraceStart + (CameraRotation.Vector() * TraceDistance);
+
+	FHitResult HitResult;
+
+	// ---------------------------------------------------------
+	// 3. ADIM: Çarpýþma Kanalýný Deðiþtir
+	// ---------------------------------------------------------
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this); // Karakterin kendisini yoksay
+
+	// WorldDynamic yerine ECC_Visibility kullan.
+	// Visibility, sadece ekranda görünen objelere çarpar.
+	bool bHit = GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		TraceStart,
+		TraceEnd,
+		ECollisionChannel::ECC_Visibility,
+		QueryParams
+	);
+
+	// ---------------------------------------------------------
+	// 4. ADIM: Hedef Lokasyonu Belirle
+	// ---------------------------------------------------------
+	FVector TargetLocation = bHit ? HitResult.ImpactPoint : TraceEnd;
+
+	// ---------------------------------------------------------
+	// 5. ADIM: Mermiyi Namludan Çýkart
+	// ---------------------------------------------------------
+	FVector SpawnLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+	// ---------------------------------------------------------
+	// 6. ADIM: Merminin Rotasyonunu Hesapla (Bu kýsým slayttakiyle ayný)
+	// ---------------------------------------------------------
+	FRotator SpawnRotation = UKismetMathLibrary::FindLookAtRotation(SpawnLocation, TargetLocation);
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.Instigator = this;
 
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
+	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, SpawnParams);
 
+	// ---------------------------------------------------------
+	// QA Check: Debug Line Ekle (image_2.png'dekini düzeltmek için)
+	// ---------------------------------------------------------
+	// Kýrmýzý çizgi tam crosshair'ýn ortasýna gitmelidir.
+	DrawDebugLine(GetWorld(), TraceStart, TargetLocation, FColor::Red, false, 2.0f, 0, 2.0f);
 }
 
 
