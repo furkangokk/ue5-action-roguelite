@@ -66,21 +66,16 @@ void ASCharacter::MoveRight(float Value)
 
 }
 
-void ASCharacter::PrimaryAttack()
+void ASCharacter::SpawnProjectile(TSubclassOf<AActor> ClassToSpawn)
 {
-	PlayAnimMontage(AttackAnim);
+	if (!ClassToSpawn)
+	{
+		return;
+	}
 
-	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
-
-	
-}
-
-void ASCharacter::PrimaryAttack_TimeElapsed()
-{
 	FVector CameraLocation;
 	FRotator CameraRotation;
 
-	
 	if (CameraComp)
 	{
 		CameraLocation = CameraComp->GetComponentLocation();
@@ -96,8 +91,6 @@ void ASCharacter::PrimaryAttack_TimeElapsed()
 	FVector TraceEnd = TraceStart + (CameraRotation.Vector() * TraceDistance);
 
 	FHitResult HitResult;
-
-	
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 
@@ -109,22 +102,40 @@ void ASCharacter::PrimaryAttack_TimeElapsed()
 		QueryParams
 	);
 
-	
 	FVector TargetLocation = bHit ? HitResult.ImpactPoint : TraceEnd;
-	
 	FVector SpawnLocation = GetMesh()->GetSocketLocation("Muzzle_01");
-
 	FRotator SpawnRotation = UKismetMathLibrary::FindLookAtRotation(SpawnLocation, TargetLocation);
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.Instigator = this;
 
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, SpawnParams);
+	GetWorld()->SpawnActor<AActor>(ClassToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
 
+}
+
+void ASCharacter::PrimaryAttack()
+{
+	PlayAnimMontage(AttackAnim);
+
+	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
 
 	
-	DrawDebugLine(GetWorld(), TraceStart, TargetLocation, FColor::Red, false, 2.0f, 0, 2.0f);
+}
+
+void ASCharacter::PrimaryAttack_TimeElapsed()
+{
+	SpawnProjectile(ProjectileClass);
+}
+
+void ASCharacter::Dash()
+{
+	GetWorldTimerManager().SetTimer(TimerHandle_Dash, this, &ASCharacter::Dash_TimeElapsed, 0.2f, false);
+}
+
+void ASCharacter::Dash_TimeElapsed()
+{
+	SpawnProjectile(DashProjectileClass);
 }
 
 
@@ -152,6 +163,7 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAction("PrimaryAttack", IE_Pressed, this, &ASCharacter::PrimaryAttack);
 	PlayerInputComponent->BindAction("PrimaryInteract", IE_Pressed, this, &ASCharacter::PrimaryInteract);
+	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ASCharacter::Dash);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ASCharacter::StopJumping);
 }

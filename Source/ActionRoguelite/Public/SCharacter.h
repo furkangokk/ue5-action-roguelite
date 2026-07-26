@@ -21,11 +21,21 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	TSubclassOf<AActor> ProjectileClass;
 
+	//UPROPERTY(EditAnywhere, Category = "Abilities")
+	//TSubclassOf<AActor> MagicProjectileClass; // Veya TSubclassOf<AProjectileBase>
+
+	UPROPERTY(EditAnywhere, Category = "Abilities")
+	TSubclassOf<AActor> BlackholeProjectileClass;
+
+	UPROPERTY(EditAnywhere, Category = "Abilities")
+	TSubclassOf<AActor> DashProjectileClass;
+
 	UPROPERTY(EditAnywhere, Category ="Attack")
 	UAnimMontage* AttackAnim;
 
 	FTimerHandle TimerHandle_PrimaryAttack;
 
+	FTimerHandle TimerHandle_Dash;
 
 public:
 	// Sets default values for this character's properties
@@ -54,10 +64,15 @@ public:
 
 	void MoveRight(float Value);
 
+	void SpawnProjectile(TSubclassOf<AActor> ClassToSpawn);
+
 	void PrimaryAttack();
 
 	void PrimaryAttack_TimeElapsed();
 
+	void Dash();
+
+	void Dash_TimeElapsed();
 
 	void PrimaryInteract();
 
