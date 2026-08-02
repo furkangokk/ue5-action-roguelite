@@ -3,7 +3,9 @@
 #include "Components/SphereComponent.h"
 #include "SAttributeComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Particles/ParticleSystem.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 
 AProjectileBase::AProjectileBase()
@@ -12,7 +14,7 @@ AProjectileBase::AProjectileBase()
 
 	SphereComp = CreateDefaultSubobject<USphereComponent>("SphereComp");
 	SphereComp->SetCollisionProfileName("Projectile");
-	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &AProjectileBase::OnActorOverlap);
+	SphereComp->OnComponentHit.AddDynamic(this, &AProjectileBase::OnActorHit);
 	SphereComp->SetNotifyRigidBodyCollision(true);
 	RootComponent = SphereComp;
 
@@ -24,36 +26,37 @@ AProjectileBase::AProjectileBase()
 	MovementComp->bRotationFollowsVelocity = true;
 	MovementComp->bInitialVelocityInLocalSpace = true;
 	MovementComp->ProjectileGravityScale = 0.0f;
-
-
 }
 
-void AProjectileBase::OnActorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AProjectileBase::OnActorHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (OtherActor && OtherActor != GetInstigator())
 	{
-		// Eski (Hata veren) sat�r:
-		// USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(OtherActor->GetComponentByClass(USAttributeComponent::StaticClass()));
-
-		// Yeni (Daha g�venli ve modern) sat�r:
 		USAttributeComponent* AttributeComp = OtherActor->GetComponentByClass<USAttributeComponent>();
 		if (AttributeComp)
 		{
 			AttributeComp->ApplyHealthChange(-20.0f);
-
-			Destroy();
 		}
+
+		Explode();
 	}
 }
 
-void AProjectileBase::BeginPlay()
+// _Implementation from it being marked as BlueprintNativeEvent
+void AProjectileBase::Explode_Implementation()
 {
-	Super::BeginPlay();
+	// Check to make sure we aren't already being 'destroyed'
+	// Adding ensure to see if we encounter this situation at all
+	if (ensure(!IsActorBeingDestroyed()))
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(this, ImpactVFX, GetActorLocation(), GetActorRotation());
 
+		Destroy();
+	}
 }
 
-void AProjectileBase::Tick(float DeltaTime)
+void AProjectileBase::PostInitializeComponents()
 {
-	Super::Tick(DeltaTime);
-
+	Super::PostInitializeComponents();
+	//SphereComp->IgnoreActorWhenMoving(GetInstigator(), true);
 }

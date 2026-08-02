@@ -9,34 +9,42 @@
 
 class USphereComponent;
 class UParticleSystemComponent;
+class UParticleSystem;
 class UProjectileMovementComponent;
 class USAttributeComponent;
 
-UCLASS()
+UCLASS(Abstract) // 'Abstract' marks this class as incomplete, keeping this out of certain dropdowns windows like SpawnActor in Unreal Editor
 class ACTIONROGUELITE_API AProjectileBase : public AActor
 {
 	GENERATED_BODY()
 
-public:
-	AProjectileBase();
-
 protected:
 
-	UFUNCTION()
-	void OnActorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	UParticleSystem* ImpactVFX;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USphereComponent* SphereComp;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UParticleSystemComponent* EffectComp;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UProjectileMovementComponent* MovementComp;
 
-	virtual void BeginPlay() override;
+	// 'virtual' so we can override this in child-classes
+	UFUNCTION()
+	virtual void OnActorHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	// BlueprintNativeEvent = C++ base implementation, can be expanded in Blueprints
+	// BlueprintCallable to allow child classes to trigger explosions
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void Explode();
+
+	virtual void PostInitializeComponents() override;
 
 public:
-	virtual void Tick(float DeltaTime) override;
+
+	AProjectileBase();
 
 };
