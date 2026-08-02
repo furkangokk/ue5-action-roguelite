@@ -22,9 +22,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	TSubclassOf<AActor> ProjectileClass;
 
-	//UPROPERTY(EditAnywhere, Category = "Abilities")
-	//TSubclassOf<AActor> MagicProjectileClass; // Veya TSubclassOf<AProjectileBase>
-
 	UPROPERTY(EditAnywhere, Category = "Abilities")
 	TSubclassOf<AActor> BlackholeProjectileClass;
 
@@ -34,7 +31,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category ="Attack")
 	UAnimMontage* AttackAnim;
 
+	// Delay between starting the attack anim and actually spawning the projectile (matches anim notify timing)
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	float AttackAnimDelay;
+
 	FTimerHandle TimerHandle_PrimaryAttack;
+
+	FTimerHandle TimerHandle_BlackholeAttack;
 
 	FTimerHandle TimerHandle_Dash;
 
@@ -73,6 +76,10 @@ public:
 	void PrimaryAttack();
 
 	void PrimaryAttack_TimeElapsed();
+
+	void BlackHoleAttack();
+
+	void BlackholeAttack_TimeElapsed();
 
 	void Dash();
 
