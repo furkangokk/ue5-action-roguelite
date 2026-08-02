@@ -1,3 +1,5 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -9,18 +11,25 @@ class ACTIONROGUELITE_API ADashProjectile : public AProjectileBase
 {
 	GENERATED_BODY()
 
-public:
-	ADashProjectile();
-
 protected:
+
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport")
+	float TeleportDelay;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport")
+	float DetonateDelay;
+
+	// Handle to cancel timer if we already hit something
+	FTimerHandle TimerHandle_DelayedDetonate;
+
+	// Base class using BlueprintNativeEvent, we must override the _Implementation not Explode()
+	virtual void Explode_Implementation() override;
+
+	void TeleportInstigator();
+
 	virtual void BeginPlay() override;
 
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+public:
 
-	FTimerHandle TimerHandle_DelayedDetonate;
-	void Explode();
-
-	FTimerHandle TimerHandle_DelayedTeleport;
-	void TeleportInstigator();
+	ADashProjectile();
 };
