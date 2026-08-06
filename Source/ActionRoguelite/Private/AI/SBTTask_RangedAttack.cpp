@@ -5,7 +5,7 @@
 #include "AIController.h"
 #include "GameFramework/Character.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include <SCharacter.h>
+#include "SAttributeComponent.h"
 
 EBTNodeResult::Type USBTTask_RangedAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
@@ -27,11 +27,18 @@ EBTNodeResult::Type USBTTask_RangedAttack::ExecuteTask(UBehaviorTreeComponent& O
 			return EBTNodeResult::Failed;
 		}
 
+		USAttributeComponent* TargetAttributeComp = TargetActor->GetComponentByClass<USAttributeComponent>();
+		if (TargetAttributeComp && !TargetAttributeComp->IsAlive())
+		{
+			return EBTNodeResult::Failed;
+		}
+
 		FVector Directon = TargetActor->GetActorLocation() - MuzzleLocation;
 		FRotator MuzzleRotation = Directon.Rotation();
 
 		FActorSpawnParameters Params;
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		Params.Instigator = MyPawn;
 
 		AActor* NewProj = GetWorld()->SpawnActor<AActor>(ProjectileClass, MuzzleLocation, MuzzleRotation, Params);
 

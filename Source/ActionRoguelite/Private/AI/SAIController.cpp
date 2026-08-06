@@ -9,7 +9,10 @@ void ASAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	RunBehaviorTree(BehaviourTree);
+	if (ensureMsgf(BehaviourTree, TEXT("BehaviourTree is nullptr! Assign it on your AI Controller.")))
+	{
+		RunBehaviorTree(BehaviourTree);
+	}
 
 	APawn* MyPawn = UGameplayStatics::GetPlayerPawn(this, 0);
 	if (MyPawn)
